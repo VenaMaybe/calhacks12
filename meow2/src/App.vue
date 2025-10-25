@@ -33,11 +33,11 @@ onMounted(() => {
 	height: 100dvh;
 	padding: 1rem;
 	box-sizing: border-box;
-	background: #0a0a0b;
+	background: #ffffff;
 }
 .left, .right {
-	background: #0f0f12;
-	border: 1px solid #1f1f24;
+	background: #ebebf8;
+	border: 1px solid #a7a7ff;
 	border-radius: 16px;
 	overflow: hidden;
 }

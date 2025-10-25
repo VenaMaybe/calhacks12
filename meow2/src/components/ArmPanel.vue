@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, reactive, ref } from 'vue'
+import { onMounted, onBeforeUnmount, reactive, ref, watch, nextTick } from 'vue'
 import type { Marker } from '@/types'
 
 interface Props {
@@ -9,26 +9,50 @@ interface Props {
 const props = defineProps<Props>()
 
 const boxEl = ref<HTMLElement | null>(null)
-const box = reactive({ w: 0, h: 0 })
+const imgEl = ref<HTMLImageElement | null>(null)
+
+// Measured image rect (size) and its offset inside the box
+const imgRectInBox = reactive({ w: 0, h: 0, x0: 0, y0: 0 })
 
 function measure() {
-	if (!boxEl.value) return
-	const r = boxEl.value.getBoundingClientRect()
-	box.w = r.width
-	box.h = r.height
+	if (!boxEl.value || !imgEl.value) return
+	const boxR = boxEl.value.getBoundingClientRect()
+	const imgR = imgEl.value.getBoundingClientRect()
+	imgRectInBox.w = imgR.width
+	imgRectInBox.h = imgR.height
+	imgRectInBox.x0 = imgR.left - boxR.left
+	imgRectInBox.y0 = imgR.top - boxR.top
 }
+
+let ro: ResizeObserver | null = null
 
 onMounted(() => {
 	measure()
 	window.addEventListener('resize', measure)
+	// Re-measure when the actual image finishes loading
+	imgEl.value?.addEventListener('load', measure)
+	// Observe size changes of the image (responsive layout)
+	if ('ResizeObserver' in window && imgEl.value) {
+		ro = new ResizeObserver(() => measure())
+		ro.observe(imgEl.value)
+	}
 })
+
 onBeforeUnmount(() => {
 	window.removeEventListener('resize', measure)
+	imgEl.value?.removeEventListener('load', measure)
+	ro?.disconnect()
+})
+
+// In case the src changes dynamically
+watch(() => props.imageUrl, async () => {
+	await nextTick()
+	measure()
 })
 
 function styleFor(m: Marker) {
-	const left = (m.xPct / 100) * box.w
-	const top = (m.yPct / 100) * box.h
+	const left = imgRectInBox.x0 + (m.xPct / 100) * imgRectInBox.w
+	const top = imgRectInBox.y0 + (m.yPct / 100) * imgRectInBox.h
 	return { left: `${left}px`, top: `${top}px` }
 }
 </script>
@@ -36,7 +60,7 @@ function styleFor(m: Marker) {
 <template>
 	<div class="arm-panel">
 		<div class="img-box" ref="boxEl">
-			<img class="arm-img" :src="imageUrl" alt="arm diagram" />
+			<img ref="imgEl" class="arm-img" :src="imageUrl" alt="arm diagram" />
 			<div
 				v-for="m in props.markers"
 				:key="m.id"
@@ -101,7 +125,7 @@ function styleFor(m: Marker) {
 	border-radius: 6px;
 	background: rgba(255,255,255,.06);
 	backdrop-filter: blur(2px);
-	color: #ddd;
+	color: #121214;
 }
 .marker.on { --c: #34d399; }
 .marker.warn { --c: #f59e0b; }

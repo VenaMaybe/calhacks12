@@ -81,15 +81,15 @@ const current = computed(() => props.items[idx.value])
 	object-fit: contain;
 }
 .meta { display: flex; justify-content: space-between; align-items: center; }
-.title { font-weight: 600; color: #e5e7eb; }
-.score { margin-left: .35rem; color: #93c5fd; }
+.title { font-weight: 600; color: #121214; }
+.score { margin-left: .35rem; color: #a7a7ff; }
 .controls button {
 	font-size: 1.2rem;
 	padding: .25rem .6rem;
 	border-radius: 8px;
-	border: 1px solid #2a2a2a;
-	background: #121214;
-	color: #e5e7eb;
+	border: 1px solid #a7a7ff;
+	background: #e5e7eb;
+	color: #121214;
 }
 .thumbs {
 	display: grid;
@@ -103,10 +103,11 @@ const current = computed(() => props.items[idx.value])
 	border-radius: 8px;
 	background: transparent;
 	padding: .25rem;
-	color: #e5e7eb;
+	color: #000000;
 }
 .thumb.active {
-	border-color: #60a5fa;
+	background: #ccccff;
+	border-color: #a7a7ff;
 }
 .thumb img {
 	width: 56px;
