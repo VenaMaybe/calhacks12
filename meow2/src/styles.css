@@ -1,0 +1,17 @@
+/* src/styles.css */
+* {
+	box-sizing: border-box;
+}
+html, body, #app {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	background: #0a0a0b; /* match your app background */
+	color: #e5e7eb;
+}
+body {
+	/* prevent accidental horizontal scrolling from slightly overflowing children */
+	overflow-x: hidden;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
