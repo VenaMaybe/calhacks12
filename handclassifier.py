@@ -97,4 +97,24 @@ def test(dataloader,loss_fn, model):
 
     print(f"Test Loss: {avg_loss:.4f}, Test Accuracy: {accuracy:.4f}")
     return avg_loss, accuracy
+    
+def main(save_path="PLACEHOLDER"):
 
+    input_dim = 10
+    hidden_size = 64
+    num_layers = 2
+    num_classes = 3
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model = myCNN(input_dim, hidden_size, num_layers, nn.ReLU(), num_classes).to(device)
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+    train_loader, test_loader = load_data(full_data, batch_size)
+
+    for epoch in range(20):
+        print(f"Epoch {epoch+1}")
+        test(train_loader, model, loss_fn, optimizer, device)
+        training(test_loader, model, loss_fn, device)
+
+    torch.save(model.state_dict(), save_path)
