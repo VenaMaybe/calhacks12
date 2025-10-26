@@ -19,6 +19,8 @@ SENSOR_2_UUID = "bf9a865a-ecf1-492c-aadc-063a2cde086c"
 HZ = 2
 SAMPLE_RATE = 1.0 / HZ
 
+# output file path 
+OUTPUT_PATH = "placeholder" 
 # ------------------------------------------
 
 """
@@ -154,8 +156,9 @@ if __name__ == "__main__":
 
             # Save the ML-ready data to a CSV file
             output_file = "sensor_data.csv"
-            df.to_csv(output_file, index=False)
+            df.to_pkl(output_file, OUTPUT_PATH)
 
             print(f"\nSuccessfully saved data to {output_file}")
             print("\nDataFrame Head:")
             print(df.head())
+
