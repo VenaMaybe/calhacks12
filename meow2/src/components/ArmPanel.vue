@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, reactive, ref, watch, nextTick } from 'vue'
+import { ref, watchEffect } from 'vue'
 import type { Marker } from '@/types'
 
 interface Props {
@@ -8,68 +8,59 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const boxEl = ref<HTMLElement | null>(null)
-const imgEl = ref<HTMLImageElement | null>(null)
+// Natural (intrinsic) image size for precise viewBox
+const natW = ref<number>(0)
+const natH = ref<number>(0)
 
-// Measured image rect (size) and its offset inside the box
-const imgRectInBox = reactive({ w: 0, h: 0, x0: 0, y0: 0 })
-
-function measure() {
-	if (!boxEl.value || !imgEl.value) return
-	const boxR = boxEl.value.getBoundingClientRect()
-	const imgR = imgEl.value.getBoundingClientRect()
-	imgRectInBox.w = imgR.width
-	imgRectInBox.h = imgR.height
-	imgRectInBox.x0 = imgR.left - boxR.left
-	imgRectInBox.y0 = imgR.top - boxR.top
+async function loadNaturalSize(url: string) {
+	return new Promise<{ w: number; h: number }>((resolve, reject) => {
+		const img = new Image()
+		img.onload = () => resolve({ w: img.naturalWidth || img.width, h: img.naturalHeight || img.height })
+		img.onerror = reject
+		img.src = url
+	})
 }
 
-let ro: ResizeObserver | null = null
-
-onMounted(() => {
-	measure()
-	window.addEventListener('resize', measure)
-	// Re-measure when the actual image finishes loading
-	imgEl.value?.addEventListener('load', measure)
-	// Observe size changes of the image (responsive layout)
-	if ('ResizeObserver' in window && imgEl.value) {
-		ro = new ResizeObserver(() => measure())
-		ro.observe(imgEl.value)
+watchEffect(async () => {
+	if (!props.imageUrl) return
+	try {
+		const { w, h } = await loadNaturalSize(props.imageUrl)
+		natW.value = w || 1000
+		natH.value = h || 1000
+	} catch {
+		// sensible fallback
+		natW.value = 1000
+		natH.value = 562
 	}
 })
 
-onBeforeUnmount(() => {
-	window.removeEventListener('resize', measure)
-	imgEl.value?.removeEventListener('load', measure)
-	ro?.disconnect()
-})
-
-// In case the src changes dynamically
-watch(() => props.imageUrl, async () => {
-	await nextTick()
-	measure()
-})
-
-function styleFor(m: Marker) {
-	const left = imgRectInBox.x0 + (m.xPct / 100) * imgRectInBox.w
-	const top = imgRectInBox.y0 + (m.yPct / 100) * imgRectInBox.h
-	return { left: `${left}px`, top: `${top}px` }
+function toXY(m: Marker) {
+	return {
+		x: (m.xPct / 100) * natW.value,
+		y: (m.yPct / 100) * natH.value
+	}
 }
 </script>
 
 <template>
 	<div class="arm-panel">
-		<div class="img-box" ref="boxEl">
-			<img ref="imgEl" class="arm-img" :src="imageUrl" alt="arm diagram" />
-			<div
-				v-for="m in props.markers"
-				:key="m.id"
-				class="marker"
-				:class="m.state"
-				:style="styleFor(m)"
-			>
-				<span class="dot" />
-				<span class="tag" v-if="m.label">{{ m.label }}</span>
+		<!-- The wrapper keeps a nice box; SVG handles aspect + letterboxing internally -->
+		<div
+			class="svg-wrap"
+			:style="{ aspectRatio: natW && natH ? `${natW}/${natH}` : '16/9' }"
+		>
+			<div class="svg-inset">
+				<svg
+					class="arm-svg"
+					:viewBox="`0 0 ${natW} ${natH}`"
+					preserveAspectRatio="xMidYMid meet"
+				>
+					<image :href="props.imageUrl" x="0" y="0" :width="natW" :height="natH" pointer-events="none" />
+					<g v-for="m in props.markers" :key="m.id" class="marker" :class="m.state" :transform="`translate(${toXY(m).x}, ${toXY(m).y})`">
+						<circle class="dot" r="6" />
+						<text class="tag" x="10" y="4">{{ m.label }}</text>
+					</g>
+				</svg>
 			</div>
 		</div>
 	</div>
@@ -83,57 +74,56 @@ function styleFor(m: Marker) {
 	height: 100%;
 	padding: 1rem;
 }
-.img-box {
+
+.svg-wrap {
 	position: relative;
 	width: 100%;
 	height: 100%;
 	border-radius: 12px;
 	overflow: hidden;
 	background: #ffffff;
+	--inset: 0.9; /* change this to .8, .6, etc. */
 }
-.arm-img {
+
+.svg-inset {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+}
+
+.arm-svg {
+	/* 75% inset inside the white box */
+	width: calc(var(--inset) * 100%);
+	height: calc(var(--inset) * 100%);
 	display: block;
-	max-width: 75%;
-	max-height: 75%;
-	margin: auto;
-	object-fit: contain;
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
 }
-.marker {
-	position: absolute;
-	transform: translate(-50%, -50%);
-	display: inline-flex;
-	align-items: center;
-	gap: .25rem;
-	--c: #888;
-}
-.marker .dot {
-	width: 12px;
-	height: 12px;
-	border-radius: 50%;
-	background: var(--c);
-	box-shadow: 0 0 12px 2px var(--c);
+
+/* Marker styling (SVG-friendly) */
+.marker { --c: #888; }
+.marker.on { --c: #69db7d; }
+.marker.warn { --c: #f59e0b; }
+.marker.off { --c: #6b7280; opacity: .8; }
+
+.dot {
+	fill: var(--c);
+	filter: drop-shadow(0 0 6px var(--c));
 	animation: ping 1.2s infinite;
 }
-.marker.off .dot { box-shadow: none; }
-.marker .tag {
-	padding: .1rem .4rem;
+.marker.off .dot { filter: none; animation: none; }
+
+.tag {
 	font-size: .8rem;
-	border-radius: 6px;
-	background: rgba(255,255,255,.06);
-	backdrop-filter: blur(2px);
-	color: #121214;
+	fill: #121214;
+	paint-order: stroke;
+	stroke: rgba(255,255,255,.7);
+	stroke-width: 6px;
+	stroke-linejoin: round;
 }
-.marker.on { --c: #34d399; }
-.marker.warn { --c: #f59e0b; }
-.marker.off { --c: #6b7280; opacity: .7; }
 
 @keyframes ping {
-	0% { box-shadow: 0 0 0 0 var(--c); }
-	70% { box-shadow: 0 0 0 8px rgba(0,0,0,0); }
-	100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+	0% { filter: drop-shadow(0 0 0 var(--c)); }
+	70% { filter: drop-shadow(0 0 8px rgba(0,0,0,0)); }
+	100% { filter: drop-shadow(0 0 0 rgba(0,0,0,0)); }
 }
 </style>

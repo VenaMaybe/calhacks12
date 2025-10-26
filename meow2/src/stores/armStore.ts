@@ -23,8 +23,8 @@ export const useArmStore = defineStore('arm', {
 		},
 		async fetchMarkers() {
 			this.markers = [
-				{ id: 'flexor', xPct: 43, yPct: 80, state: 'on', label: 'Flexor Capri Radialis' },
-				{ id: 'extensor', xPct: 62, yPct: 42, state: 'warn', label: 'Extensor Digitorum Communis' },
+				{ id: 'flexor', xPct: 25.5, yPct: 96.4, state: 'on', label: 'Flexor Capri Radialis' },
+				{ id: 'extensor', xPct: 24.5, yPct: 4.9, state: 'warn', label: 'Extensor Digitorum Communis' },
 			]
 		},
 		async fetchHands() {
