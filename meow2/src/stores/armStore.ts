@@ -23,16 +23,15 @@ export const useArmStore = defineStore('arm', {
 		},
 		async fetchMarkers() {
 			this.markers = [
-				{ id: 'elbow', xPct: 35, yPct: 55, state: 'on', label: 'Elbow' },
-				{ id: 'wrist', xPct: 62, yPct: 42, state: 'warn', label: 'Wrist' },
-				{ id: 'fingers', xPct: 78, yPct: 22, state: 'off', label: 'Fingers' }
+				{ id: 'flexor', xPct: 43, yPct: 80, state: 'on', label: 'Flexor Capri Radialis' },
+				{ id: 'extensor', xPct: 62, yPct: 42, state: 'warn', label: 'Extensor Digitorum Communis' },
 			]
 		},
 		async fetchHands() {
 			this.hands = [
-				{ id: 'hand-a', label: 'Open Hand', imageUrl: '/hands/open.png', score: 0.41 },
-				{ id: 'hand-b', label: 'Grip', imageUrl: '/hands/grip.png', score: 0.83 },
-				{ id: 'hand-c', label: 'Pinch', imageUrl: '/hands/pinch.png', score: 0.37 }
+				{ id: 'hand-rock', label: 'Rock', imageUrl: '/hands/rock.png', score: 0.37 },
+				{ id: 'hand-paper', label: 'Paper', imageUrl: '/hands/paper.png', score: 0.37 },
+				{ id: 'hand-scissors', label: 'Scissors', imageUrl: '/hands/scissors.png', score: 0.37 }
 			]
 		},
 		async fetchRecommendation() {

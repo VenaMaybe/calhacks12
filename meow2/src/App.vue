@@ -17,7 +17,7 @@ onMounted(() => {
 <template>
 	<div class="layout">
 		<section class="left">
-			<ArmPanel imageUrl="/arm.png" :markers="store.markers" />
+			<ArmPanel imageUrl="/arm2.png" :markers="store.markers" />
 		</section>
 		<section class="right">
 			<HandCarousel :items="store.hands" :recommendation="store.recommendation" />

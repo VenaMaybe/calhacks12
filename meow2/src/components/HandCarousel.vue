@@ -76,8 +76,8 @@ const current = computed(() => props.items[idx.value])
 	color: #121214;
 }
 .stage img {
-	max-width: 100%;
-	max-height: 100%;
+	max-width: 75%;
+	max-height: 75%;
 	object-fit: contain;
 }
 .meta { display: flex; justify-content: space-between; align-items: center; }

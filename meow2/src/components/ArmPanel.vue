@@ -93,8 +93,8 @@ function styleFor(m: Marker) {
 }
 .arm-img {
 	display: block;
-	max-width: 100%;
-	max-height: 100%;
+	max-width: 75%;
+	max-height: 75%;
 	margin: auto;
 	object-fit: contain;
 	position: absolute;
