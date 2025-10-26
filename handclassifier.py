@@ -1,17 +1,24 @@
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
+from sklearn.model_selection import train_test_split
+import joblib
+
+
+# this script creates a torch nn object and saves the weights and biases into some directory 
 
 # data shape: vector column, class column 
+num_outputs = 3
 # change depending on how many possible outputs we have -- for rock, paper, scissors we have 3 
 
 # define nn class 
 class myCNN(nn.Module):
     # constructor 
-    def __init__(self, input_dim, hidden_size, num_layers, activation, output_dim=3):
+    def __init__(self, input_dim, hidden_size, num_layers, activation, output_dim=num_outputs):
         super(myCNN, self).__init__()
         layers = [nn.Linear(input_dim, hidden_size), activation] # creating input later
         for i in range(num_layers - 1): 
@@ -20,6 +27,7 @@ class myCNN(nn.Module):
         self.model = nn.Sequential(*layers) # chaining layers together 
     def forward(self, x):
         return self.model(x)
+
 
 def load_data(full_data, batch_size):
     print("fix pls")
@@ -39,11 +47,11 @@ def load_data(full_data, batch_size):
 
       # convert to pytorch tensors
 
-    train_target_output = scaler_y.fit_transform(training_target)
+    train_target_output =  training_target.values
     train_input_features = scaler_X.fit_transform(training_input)
 
     test_input_features = scaler_X.transform(testing_input)
-    test_target_output = scaler_y.transform(testing_target)
+    test_target_output = testing_target.values
 
 
     X_train = torch.tensor(train_input_features, dtype=torch.float32)
@@ -59,7 +67,7 @@ def load_data(full_data, batch_size):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    return (train_loader, test_loader)
+    return (train_loader, test_loader, scaler_X)
     # load the data and prepare tensors
     # normalize data, make tensors, prepare dataset, split into testing and training
 
@@ -92,13 +100,16 @@ def test(dataloader,loss_fn, model):
             predictions = outputs.argmax(1)
             correct += (predictions==y).sum().item()
             total += y.size(0)
-    avg_loss = total_loss / total
+    avg_loss = test_loss / total
     accuracy = correct / total
 
     print(f"Test Loss: {avg_loss:.4f}, Test Accuracy: {accuracy:.4f}")
     return avg_loss, accuracy
-    
-def main(save_path="PLACEHOLDER"):
+
+def main(save_path="model.pth"):
+
+    # IMPORT THE PD DATAFRAME INTO THE TEST AND TRAIN CODE! READ FROM PATH AND TRAIN
+
 
     input_dim = 10
     hidden_size = 64
@@ -110,11 +121,14 @@ def main(save_path="PLACEHOLDER"):
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-    train_loader, test_loader = load_data(full_data, batch_size)
-
+    train_loader, test_loader, scaler_X = load_data(full_data, batch_size)
+    # --- training loop ---
     for epoch in range(20):
         print(f"Epoch {epoch+1}")
-        test(train_loader, model, loss_fn, optimizer, device)
-        training(test_loader, model, loss_fn, device)
+        training(train_loader, loss_fn, optimizer, model)
+        test(test_loader, loss_fn, model)
 
+    # --- save the trained model ---
     torch.save(model.state_dict(), save_path)
+    joblib.dump(scaler_X, "scaler.pkl")
+
